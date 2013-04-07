@@ -1,12 +1,14 @@
 var scene, camera, renderer;
-var ship;
-var particles = [];
+var ship, targetSun;
+var shapes = [];
+var numShapes = 100;
 var directionalLight;
+var shapeMaterial;
 
 function init() {
 	/* SCENE */
 	scene = new THREE.Scene();
-	camera = new THREE.PerspectiveCamera(80, window.innerWidth/window.innerHeight, 1, 4000);
+	camera = new THREE.PerspectiveCamera(80, window.innerWidth/window.innerHeight, 1, 8000);
 
 	/* CAMERA */
 	camera.position.z = 1000;
@@ -18,25 +20,28 @@ function init() {
 
 	/* OBJECTS */
 	var shipMaterial = new THREE.MeshLambertMaterial({color: 0x172E00});
+	var shapeMaterial = new THREE.MeshLambertMaterial({color: 0xE34F12});
+	var sunMaterial = new THREE.MeshLambertMaterial({color: 0xFFFF00});
 
-	ship = new THREE.Mesh(new THREE.CylinderGeometry(200,200,200,6,1,false), shipMaterial);
+	ship = new THREE.Mesh(new THREE.CylinderGeometry(80,80,80,6,1,false), shipMaterial);
+	ship.position.z = 700;
 	scene.add(ship);
 
-	material = new THREE.ParticleCanvasMaterial( { color: 0xffffff, program: particleRender } );
-	// make the particle
-	particle = new THREE.Particle(material);
-	scene.add(particle);
+	targetSun = new THREE.Mesh(new THREE.SphereGeometry(500, 200, 200), sunMaterial);
+	targetSun.position.set(0,0,-8000);
+	scene.add(targetSun);
 
-	particles = [];
-	makeParticles();
+	generateShapes();
 
 	/* MOUSE */
 	document.onmousemove = handleMouseMove;
 
 	/* LIGHTS */
-	directionalLight = new THREE.PointLight(0xFFFFFF, 1);
+	var ambientLight = new THREE.AmbientLight(0x111111);
+	scene.add(ambientLight);
 
-	directionalLight.position.set(0, 0, 100);
+	directionalLight = new THREE.PointLight(0xFFFFFF, 3);
+	directionalLight.position.set(10, 0, -500);
 	scene.add(directionalLight);
 
 	render();
@@ -48,7 +53,21 @@ init();
 function render() {
 	requestAnimationFrame(render);
 	ship.rotation.y += 0.02;
-	updateParticles();
+	targetSun.position.z += 1;
+	if(targetSun.position.z > 1000) {
+		targetSun.position.z = -8000;
+	}
+
+	for(var i = 0; i < shapes.length; i++) {
+		shapes[i].position.z += shapes[i].speed;
+		shapes[i].rotation.x += 0.03;
+
+		if(shapes[i].position.z > 1000) {
+			shapes[i].position.x = Math.random() * 5600 - 2800;
+			shapes[i].position.y = Math.random() * 3200 - 1600;
+			shapes[i].position.z = -6000;
+		}
+	}
 	renderer.render(scene, camera);
 }
 
@@ -56,61 +75,23 @@ var mouseY;
 
 function handleMouseMove(event) {
 	mouseY = event.clientY;
-	ship.position.x = (event.clientX - 750) * 1.4;
-	ship.position.y = -(event.clientY - 450) * 1.4;
+	ship.position.x = (event.clientX - 700) * 0.8;
+	ship.position.y = -(event.clientY - 350) * 0.8;
 }
 
-function makeParticles() { 
-	var particle, material; 
- 
-	// we're gonna move from z position -1000 (far away) 
-	// to 1000 (where the camera is) and add a random particle at every pos. 
-	for ( var zpos= -1000; zpos < 1000; zpos+=20 ) {
- 
-		// we make a particle material and pass through the 
-		// colour and custom particle render function we defined. 
-		material = new THREE.ParticleCanvasMaterial( { color: 0xffffff, program: particleRender } );
-		// make the particle
-		particle = new THREE.Particle(material);
- 
-		// give it a random x and y position between -500 and 500
-		//particle.position.x = Math.random() * 1000 - 500;
-		//particle.position.y = Math.random() * 1000 - 500;
- 		particle.position.x = 0;
- 		particle.position.y = 0;
+function generateShapes() {
+	var shape;
+	var randX, randY, randZ;
 
-		// set its z position
-		particle.position.z = zpos;
- 
-		// scale it up a bit
-		particle.scale.x = particle.scale.y = 10;
- 
-		// add it to the scene
-		scene.add(particle);
- 
-		// and to the array of particles. 
-		particles.push(particle); 
-	}
-}
+	for(var i = 0; i < numShapes; i++) {
+		randX = Math.random() * 5600 - 2800; //-1400 to 1400
+		randY = Math.random() * 3200 - 1600; //-800 to 800
+		randZ = Math.random() * -6000 - 2000;
 
-function particleRender( context ) {
-	// we get passed a reference to the canvas context
-	context.beginPath();
-	// and we just have to draw our shape at 0,0 - in this
-	// case an arc from 0 to 2Pi radians or 360º - a full circle!
-	context.arc( 0, 0, 1, 0,  Math.PI * 2, true );
-	context.fill();
-};
-
-function updateParticles() { 
-	// iterate through every particle
-	for(var i=0; i<particles.length; i++) {
-		particle = particles[i]; 
-
-		// and move it forward dependent on the mouseY position. 
-		particle.position.z +=  mouseY * .01;
- 
-		// if the particle is too close move it to the back
-		if(particle.position.z>1000) particle.position.z-=2000; 
+		shape = new THREE.Mesh(new THREE.SphereGeometry(60, 8, 8), shapeMaterial);
+		shape.speed = Math.random() * 60 + 20;
+		shape.position.set(randX, randY, randZ)
+		scene.add(shape);
+		shapes.push(shape);
 	}
 }

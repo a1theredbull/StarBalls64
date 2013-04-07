@@ -2,6 +2,7 @@ body {
 	background-image: url('texture/space.png');
 	margin: 0px;
 	overflow: hidden;
+	cursor: none;
 }
 
 canvas {
