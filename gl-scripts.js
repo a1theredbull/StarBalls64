@@ -34,10 +34,12 @@ var falconQuotes = ["dontdie.wav", "gdiffuser.wav", "horrible.wav", "notbuddy.wa
 var frogQuotes = ["9000.wav", "canyoumakeit.wav", "nohide.wav", "pieceofme.wav", "wemadeit.wav", "bigone.wav", "heatup.wav", "tooclose.wav", "yeahyeah.wav"];
 var rabbitQuotes = ["barrelroll.wav", "goodwork.wav", "instincts.wav", "keeppace.wav", "toolow.wav", "betterpilot.wav", "father.wav", "incoming.wav", "itsatrap.wav", "lifeflash.wav", "tooquiet.wav"];
 
+var bgMusic = ['background1.mp3', 'background2.mp3', 'background3.mp3', 'background4.mp3', 'background5.mp3', 'background6.mp3', 'background7.mp3', 'background8.mp3', 'background9.mp3', 'background10.mp3'];
+
 //lower for faster acceleration
 var accel = 14000;
 
-//every 400 asteroids missed, the cow will say something
+//every 600 asteroids missed, the cow will say something
 var asteroidsMissed = 200;
 
 function init() {
@@ -136,6 +138,17 @@ function init() {
 	audio.src = "sounds/letsrock.wav";
 	audio.play();					
 
+	/* SET MUSIC */
+	var bgAudio = $('#music')[0];
+	bgAudio.src = "sounds/BackgroundMusic/" + bgMusic[Math.floor(Math.random() * bgMusic.length)];
+	bgAudio.play();
+
+	bgAudio.addEventListener('ended', function() {
+		bgAudio.src = "sounds/BackgroundMusic/" + bgMusic[Math.floor(Math.random() * bgMusic.length)];
+		bgAudio.play();
+	}, false);
+
+
 	render();
 }
 
@@ -168,8 +181,8 @@ function render() {
 	}
 	else {
 		if(ship.rotation.z > 0) {
-			ship.rotation.z -= leanSpeed;
-			camera.rotation.z += leanSpeed;
+			ship.rotation.z -= leanSpeed/5;
+			camera.rotation.z += leanSpeed/5;
 		}
 	}
 
@@ -181,8 +194,8 @@ function render() {
 	}
 	else {
 		if(ship.rotation.z < 0) {
-			ship.rotation.z += leanSpeed;
-			camera.rotation.z -= leanSpeed;
+			ship.rotation.z += leanSpeed/5;
+			camera.rotation.z -= leanSpeed/5;
 		}
 	}		
 		
@@ -235,7 +248,7 @@ function render() {
 
 	collisionDetected = detectCollisions(possibleCollidable);
 	if(!collisionDetected) {
-		if(asteroidsMissed > 400) {
+		if(asteroidsMissed > 600) {
 			var character = Math.floor(Math.random()*3) + 1;
 			var folder;
 			var quote;
@@ -264,8 +277,8 @@ function render() {
 				audio.play();
 					
 				audio.addEventListener('ended', function() {
-				$('#portrait').fadeOut();
-				$('#incomingMsg').fadeOut();
+					$('#portrait').fadeOut();
+					$('#incomingMsg').fadeOut();
 				}, false);
 			});
 
