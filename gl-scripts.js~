@@ -1,0 +1,315 @@
+var scene, camera, renderer;
+var ship;
+var shapes = [];
+var numShapes = 85;
+var shapeRadMultiplier = 300;
+var minShapeRadius = 350;
+var maxSpawnDistance = 20000;
+
+var maxSpeed = 360;
+
+var randSpawnWidth = 6000;
+var randSpawnHeight = 5000;
+var directionalLight, shipLight, shipGlowLight;
+var shapeMaterial;
+
+var collisions = 0;
+var startTime, currentTime;
+var lastMouseX = 0;
+var lastMouseY = 0;
+
+var stats;
+var gauge;
+
+var stop = false;
+
+var audioQuote;
+var quotes = ["9000.wav", "barrelroll.wav", "betterpilot.wav", "energyballs.wav", "father.wav", "goodwork.wav", "incoming.wav", "keeppace.wav", "lifeflash.wav", "nohide.wav", "toolow.wav", "tooquiet.wav", "wemadeit.wav", "yeahyeah.wav"];
+
+//lower for faster acceleration
+var accel = 9000;
+
+//every 250 asteroids missed, the cow will say something
+var asteroidsMissed = 100;
+
+function init() {
+	$('#portrait').fadeOut('slow');
+
+	/* SCENE */
+	scene = new THREE.Scene();
+	renderer = new THREE.WebGLRenderer();
+	renderer.setSize(window.innerWidth, window.innerHeight);
+	document.body.appendChild(renderer.domElement);
+
+	/* OBJECTS */
+	var shipMaterial = new THREE.MeshPhongMaterial({
+		color: 0x888888,
+		ambient: 0x888888,
+		specular: 0x050505,
+		shininess: 300
+	});
+
+	ship = new THREE.Mesh(new THREE.CylinderGeometry(120, 144, 36, 16, 8, false), shipMaterial);
+	ship.position.z = 0;
+	scene.add(ship);
+
+	generateShapes();
+
+	/* ACTIONS */
+	window.addEventListener('resize', onWindowResize, false);
+	document.onmousemove = handleMouseMove;
+	document.onclick = restart;
+
+	/* LIGHTS */
+	var ambientLight = new THREE.AmbientLight(0x111111);
+	scene.add(ambientLight);
+
+	shipLight = new THREE.SpotLight(0xFFFFFF, 3, 50000, true);
+	shipLight.position.z = 400;
+	shipLight.distance = maxSpawnDistance;
+	shipLight.target = ship;
+	scene.add(shipLight);
+
+	directionalLight = new THREE.DirectionalLight(0x111111, 0.02);
+	directionalLight.distance = maxSpawnDistance * 0.6;
+	scene.add(directionalLight);
+
+	startTime = (new Date).getTime();
+	
+	camera = new THREE.PerspectiveCamera(30, window.innerWidth/window.innerHeight, 1, maxSpawnDistance);
+
+	/* CAMERA */
+	camera.position.z = 1400;
+
+	ship.add(camera);
+	camera.target = ship;
+
+	stats = new Stats();
+	stats.setMode(1);
+
+	stats.domElement.style.position ='absolute';
+	stats.domElement.style.left = '25px';
+	stats.domElement.style.top = '25px';
+
+	document.body.appendChild(stats.domElement);
+
+	var opts = {
+		lines: 20, // The number of lines to draw
+		angle: 0, // The length of each line
+		lineWidth: 0.44, // The line thickness
+		pointer: {
+			length: 0.9, // The radius of the inner circle
+			strokeWidth: 0.035, // The rotation offset
+			color: '#000000' // Fill color
+		},
+		colorStart: '#FF0000',   // Colors
+		colorStop: '#FF0000',    // just experiment with them
+		strokeColor: '#FFFFFF',   // to see which ones work best for you
+		generateGradient: true
+	};
+
+	gauge = new Gauge($('#gauges')[0]);
+	gauge.setOptions(opts); // create sexy gauge!
+	gauge.minValue = shapes[0].speed;
+	gauge.maxValue = maxSpeed; // set max gauge value
+	gauge.animationSpeed = 32; // set animation speed (32 is default value)
+
+	render();
+}
+
+init();
+
+/* ACTION */
+function render() {
+	currentTime = (new Date).getTime() - startTime;
+	$('#time')[0].innerHTML = (currentTime/1000) + " seconds";
+
+	if(!stop)
+		requestAnimationFrame(render);
+	var speedUpdate = (1 + currentTime/accel);
+	var gaugeLevel = speedUpdate * shapes[0].speed;
+	var maxLevel = gaugeLevel < maxSpeed? gaugeLevel : maxSpeed;
+	gauge.set(maxLevel); // set actual value
+
+	var newSpeed;
+
+	for(var i = 0; i < shapes.length; i++) {
+		randBool = Math.random() - 0.5 < 0;
+		newSpeed = shapes[i].speed * speedUpdate;
+		shapes[i].position.z += newSpeed < maxSpeed ? newSpeed : maxSpeed;
+		var collisionDetected = false;
+		//only test those in front of you
+		if(shapes[i].position.z > -760)
+			collisionDetected = detectCollisions(shapes[i]);
+
+		if(collisions == 1) {
+			//single msg			
+			if(!stop) {
+				var loseContain = document.createElement('div');
+				loseContain.id = 'loseContainer';
+
+				var loseMsg = document.createElement('div');
+				loseMsg.id = 'loseMsg';
+				loseMsg.innerHTML = "You died! Click to restart.";
+
+				loseContain.appendChild(loseMsg);				
+				document.body.appendChild(loseContain);
+
+				var audio=document.createElement("audio");
+				audio.src="sounds/ohno.wav";
+				audio.play();
+			}
+			stop = true;
+			return;		
+		}	
+
+		if(shapes[i].position.z > 1000 || collisionDetected) {
+			shapes[i].position.x = (Math.random() * randSpawnWidth) - randSpawnWidth/2;
+			shapes[i].position.y = (Math.random() * randSpawnHeight) - randSpawnHeight/2;
+			if(!collisionDetected) {
+				shapes[i].position.z = -maxSpawnDistance;
+				asteroidsMissed++;
+
+				if(asteroidsMissed == 250) {
+					var quote = quotes[Math.floor(Math.random() * quotes.length)];
+					$('#portrait').fadeIn(function() {
+						var audio = document.createElement("audio");
+						audio.src = "sounds/" + quote;
+						audio.play();
+					
+						audio.addEventListener('ended', function() {
+							$('#portrait').fadeOut();
+						}, false);
+					});
+
+					asteroidsMissed = 0;	
+				}
+			}
+		}
+	}
+
+	var targetX = (lastMouseX / window.innerWidth) * 2 - 1;
+	var targetY = (lastMouseY / window.innerHeight) * 2 - 1;
+	var futureX = ship.position.x + targetX * 120;
+	var futureY = ship.position.y - targetY * 90;
+
+	if(futureX >= -(randSpawnWidth/2)+600 && futureX <= (randSpawnWidth/2)-600)
+		ship.position.x = futureX;
+	if(futureY >= -(randSpawnHeight/2)+600 && futureY <= (randSpawnHeight/2)-600)
+		ship.position.y = futureY;
+	shipLight.position.x = ship.position.x;
+	shipLight.position.y = ship.position.y;
+
+	renderer.render(scene, camera);
+	stats.update();
+}
+
+function onWindowResize(event) {
+	camera.aspect = window.innerWidth / window.innerHeight;
+	camera.updateProjectionMatrix();
+	renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function handleMouseMove(event) {
+	lastMouseX = event.clientX;
+	lastMouseY = event.clientY;
+
+	/*var projector = new THREE.Projector();
+
+	var vector = new THREE.Vector3(
+		(event.clientX / window.innerWidth) * 2 - 1,
+		-(event.clientY / window.innerHeight) * 2 + 1,
+		0.5);
+	projector.unprojectVector(vector, camera);
+
+	var dir = vector.sub(camera.position).normalize();
+	var distance = (-camera.position.z / dir.z);
+	var pos = camera.position.clone().add(dir.multiplyScalar(distance));
+
+	ship.position = pos;
+
+	var windowX = (event.clientX / window.innerWidth) * 2 - 1;
+	var windowY = (event.clientY / window.innerHeight) * 2 - 1;
+	ship.position.x += windowX * 0.5;
+	console.log(ship.position.x);
+	ship.position.y -= windowY * 0.5;
+	shipLight.position.x = -ship.position.x;
+	shipLight.position.y = -ship.position.y;*/
+}
+
+function generateShapes() {
+	var shape;
+	var randX, randY, randZ, randColor, randRadius;
+	var randBool;
+
+	for(var i = 0; i < numShapes; i++) {
+		randX = (Math.random() * randSpawnWidth) - randSpawnHeight/2;
+		randY = (Math.random() * randSpawnHeight) - randSpawnHeight/2;
+		randZ = Math.random() * -maxSpawnDistance * 0.75 - 10000;
+		randColor = '#'+(Math.random()*0xFFFFFF<<0).toString(16); //gets random color
+		randRadius = (Math.random() * shapeRadMultiplier) + minShapeRadius;
+
+		shapeMaterial = new THREE.MeshPhongMaterial({
+			color: randColor,
+			ambient: randColor,
+			specular: 0x050505,
+			shininess: 200
+		});
+
+
+		shape = new THREE.Mesh(new THREE.SphereGeometry(randRadius, 60, 60), shapeMaterial);
+		shape.speed = (randRadius) / 8;
+		shape.position.set(randX, randY, randZ);
+
+		scene.add(shape);
+		shapes.push(shape);	
+	}
+}
+
+function detectCollisions(collidable) {
+	var originPoint = ship.position.clone();
+
+	for (var vertexIndex = 0; vertexIndex < ship.geometry.vertices.length; vertexIndex++)
+	{		
+		var localVertex = ship.geometry.vertices[vertexIndex].clone();
+		var globalVertex = localVertex.applyMatrix4(ship.matrix);
+		var directionVector = globalVertex.sub(ship.position);
+
+		var ray = new THREE.Raycaster(originPoint, directionVector.clone().normalize());
+		var collisionResults = ray.intersectObjects([collidable]);
+		if(collisionResults.length > 0 && collisionResults[0].distance < directionVector.length()) {
+			console.log("HIT");
+			collisions++;
+			return true;
+		}
+	}
+
+	return false;
+}
+
+function restart(event) {
+	if(!stop)
+		return;
+
+	var randX, randY, randZ;
+
+	for(var i = 0; i < shapes.length; i++) {
+		randX = (Math.random() * randSpawnWidth) - randSpawnHeight/2;
+		randY = (Math.random() * randSpawnHeight) - randSpawnHeight/2;
+		randZ = Math.random() * -maxSpawnDistance * 0.75 - 10000;
+
+		shapes[i].position.set(randX, randY, randZ);
+	}
+
+	ship.position.x = 0;
+	ship.position.y = 0;
+	collisions = 0;
+	requestAnimationFrame(render);
+	stop = false;
+	$('#loseMsg').fadeOut(function() {
+		$('#loseContainer').remove();
+		$('#loseMsg').remove();
+	});
+
+	startTime = (new Date).getTime();
+}

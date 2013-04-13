@@ -16,7 +16,7 @@ embed {
 	border-radius: 20px;
 	padding: 5px;
 	width: 15%;
-	height: 14%;
+	height: 10%;
 	z-index: 15;
 	position: absolute;
 	bottom: 50;
@@ -25,31 +25,15 @@ embed {
 	background-color: rgba(0,0,0,0.5);
 }
 
-#bestTime {
-	display: block;
-	z-index: 21;
-	position: absolute;
-	bottom: 50;
-	text-align: center;
-	font-size: 1.7em;
-	color: #29A3CC;
-	width: 22%;
-	margin: 0 70% 0 20%;
-
-	padding: 0.25em;
-	border-radius: 20px;
-	background-color: rgba(0,0,0,0.5);
-}
-
 #time {
 	display: block;
 	z-index: 20;
-	position: absolute;
+	position:absolute;
 	bottom: 50;
 	text-align: center;
-	font-size: 1.7em;
+	font-size: 30px;
 	color: white;
-	width: 20%;
+	width: 250px;
 	margin: 0 45%;
 
 	padding: 0.25em;
@@ -75,23 +59,11 @@ embed {
 
 #portrait {
 	width: 20%;
-	height: 25%;
+	height: 20%;
 	z-index: 40;
 	top: 3%;
 	right: 3%;
 	position: absolute;
-}
-
-#incomingMsg {
-	width: 20%;
-	z-index: 42;
-	position: absolute;
-	top: 30%;
-	right: 3%;
-	color: #00B200;
-	text-align: center;
-	font-size: 25px;
-	font-weight: bold;
 }
 
 #music {

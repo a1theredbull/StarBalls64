@@ -1,21 +1,21 @@
 <html>
 	<head>
-		<title>Star Balls 64</title>
+		<title>SPACEBALLS</title>
 		<link href='http://fonts.googleapis.com/css?family=Righteous' rel='stylesheet' type='text/css'>
 		<link href="glstyle.css" rel="stylesheet"></link>
 		<script src="http://code.jquery.com/jquery-latest.js"></script>
+		<script src="jBeep.min.js"></script>
 	</head>
 	<body>
 		<audio id="music" controls preload autoplay loop>
-   			<source src="sounds/background.mp3">
+   			<source src="background.mp3">
 		</audio>
 
-		<img id="portrait" src="pictures/cow.jpg"></img>
-		<div id="incomingMsg">INCOMING MESSAGE</div>
+		<img id="portrait" src="pic/portrait.jpg"></img>
 		<canvas id="gauges"></canvas>
-		<div id="bestTime"></div>
-		<div id="time"></div>
+		<canvas id="time"></canvas>
 		<script src="https://raw.github.com/mrdoob/three.js/master/build/three.js"></script>
+		<script src="OBJLoader.js"></script>
 		<script src="Stats.js"></script>
 		<script src="gauge.min.js"></script>
 		<script src="gl-scripts.js"></script>
