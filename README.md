@@ -1,4 +1,4 @@
-www.cis.gvsu.edu/~chaua/CS371/WebGLProject/home.html
+www.cis.gvsu.edu/~chaua/StarBalls64/home.html
 
 Check it out.
 
